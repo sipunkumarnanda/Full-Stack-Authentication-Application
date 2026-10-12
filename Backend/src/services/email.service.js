@@ -1,6 +1,7 @@
 
 
 import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
 let transporter;
 
@@ -25,27 +26,26 @@ function getSmtpTransporter() {
 
 async function sendWithResend(message) {
   const apiKey = (process.env.RESEND_API_KEY || "").trim();
-  if (!apiKey) {
+  const from = (process.env.EMAIL_FROM || "").trim();
+  if (!apiKey || !from) {
     const error = new Error("Email service is not configured");
     error.statusCode = 503;
     throw error;
   }
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(message),
-    signal: AbortSignal.timeout(15000),
-  });
+  const resend = new Resend(apiKey);
+  const { data, error: providerError } = await resend.emails.send(
+    { ...message, from },
+    { signal: AbortSignal.timeout(15000) }
+  );
 
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const error = new Error(data.message || "Email provider rejected the message");
-    error.statusCode = response.status >= 400 && response.status <= 599
-      ? response.status
+  if (providerError || !data?.id) {
+    const error = new Error(
+      providerError?.message || "Email provider rejected the message"
+    );
+    const providerStatus = providerError?.statusCode;
+    error.statusCode = Number.isInteger(providerStatus) && providerStatus >= 400
+      ? providerStatus
       : 502;
     throw error;
   }
