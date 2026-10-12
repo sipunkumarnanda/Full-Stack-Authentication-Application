@@ -87,10 +87,14 @@ function getCookieMaxAge() {
 }
 
 function accessCookieOptions() {
+  const isProduction = process.env.NODE_ENV === "production";
+
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isProduction,
+    // The Vercel frontend and Render API are different sites, so the
+    // production cookie must explicitly opt in to cross-site requests.
+    sameSite: isProduction ? "none" : "lax",
     path: "/",
     maxAge: getCookieMaxAge(),
   };

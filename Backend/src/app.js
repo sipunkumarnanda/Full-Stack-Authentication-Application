@@ -10,13 +10,34 @@ import errorMiddleware from "./middlewares/error.middleware.js";
 
 const app = express();
 
+const defaultAllowedOrigins = [
+  "http://localhost:5173",
+  "https://full-stack-authentication-applicati.vercel.app",
+  "https://full-stack-authentication-application.vercel.app",
+];
+
+const allowedOrigins = new Set([
+  ...defaultAllowedOrigins,
+  ...(process.env.CLIENT_URLS || process.env.CLIENT_URL || "")
+    .split(",")
+    .map((origin) => origin.trim().replace(/\/$/, ""))
+    .filter(Boolean),
+]);
+
 // Security headers
 app.use(helmet());
 
 // Frontend-backend communication
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin(origin, callback) {
+      // Requests without an Origin header are not browser CORS requests.
+      if (!origin || allowedOrigins.has(origin.replace(/\/$/, ""))) {
+        return callback(null, true);
+      }
+
+      return callback(null, false);
+    },
     credentials: true,
   })
 );
