@@ -4,41 +4,95 @@ import {
   test,
   expect,
   beforeEach,
+  afterEach,
 } from "@jest/globals";
 
-const mockSendMail = jest.fn().mockResolvedValue({
-  messageId: "test-message",
-});
-
-jest.unstable_mockModule("nodemailer", () => ({
-  default: {
-    createTransport: jest.fn(() => ({
-      sendMail: mockSendMail,
-      verify: jest.fn().mockResolvedValue(true),
-    })),
-  },
-}));
+const originalFetch = global.fetch;
 
 const { sendOtpEmail } = await import("../src/services/email.service.js");
 
-describe("Email service", () => {
+describe("EmailJS email service", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    process.env.EMAILJS_SERVICE_ID = "service_test";
+    process.env.EMAILJS_TEMPLATE_ID = "template_test";
+    process.env.EMAILJS_PUBLIC_KEY = "public_test";
+    process.env.EMAILJS_PRIVATE_KEY = "private_test";
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+    });
   });
 
-  test("sends a registration OTP email", async () => {
-    await sendOtpEmail(
-      "sipun@example.com",
-      "123456",
-      "registration"
-    );
+  afterEach(() => {
+    global.fetch = originalFetch;
+    delete process.env.EMAILJS_SERVICE_ID;
+    delete process.env.EMAILJS_TEMPLATE_ID;
+    delete process.env.EMAILJS_PUBLIC_KEY;
+    delete process.env.EMAILJS_PRIVATE_KEY;
+  });
 
-    expect(mockSendMail).toHaveBeenCalled();
-    expect(mockSendMail).toHaveBeenCalledWith(
-      expect.objectContaining({
-        to: "sipun@example.com",
-        subject: expect.any(String),
-      })
-    );
+  test.each([
+    ["registration", "Verify your email address"],
+    ["password-reset", "Reset your password"],
+  ])("sends the %s OTP through EmailJS", async (purpose, subject) => {
+    await expect(
+      sendOtpEmail("sipun@example.com", "123456", purpose)
+    ).resolves.toEqual({ messageId: "emailjs-accepted" });
+
+    const [, options] = global.fetch.mock.calls[0];
+    const payload = JSON.parse(options.body);
+
+    expect(payload).toMatchObject({
+      service_id: "service_test",
+      template_id: "template_test",
+      user_id: "public_test",
+      accessToken: "private_test",
+      template_params: {
+        to_email: "sipun@example.com",
+        otp: "123456",
+        passcode: "123456",
+        purpose,
+        subject,
+        expires_in: "5 minutes",
+      },
+    });
+    expect(options.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  test("fails safely when EmailJS rejects a request", async () => {
+    global.fetch.mockResolvedValue({
+      ok: false,
+      status: 403,
+      statusText: "Forbidden",
+    });
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    try {
+      await expect(
+        sendOtpEmail("sipun@example.com", "123456")
+      ).rejects.toMatchObject({
+        statusCode: 502,
+        message: "Email delivery is temporarily unavailable.",
+      });
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "EmailJS delivery failed",
+        { status: 403, statusText: "Forbidden" }
+      );
+    } finally {
+      consoleSpy.mockRestore();
+    }
+  });
+
+  test("requires the server-side EmailJS configuration", async () => {
+    delete process.env.EMAILJS_SERVICE_ID;
+
+    await expect(
+      sendOtpEmail("sipun@example.com", "123456")
+    ).rejects.toMatchObject({
+      statusCode: 503,
+      message: expect.stringContaining("EMAILJS_SERVICE_ID"),
+    });
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 });

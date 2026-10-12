@@ -1,60 +1,107 @@
-import nodemailer from "nodemailer";
+const EMAILJS_SEND_URL = "https://api.emailjs.com/api/v1.0/email/send";
+const EMAIL_TIMEOUT_MS = 15000;
 
-const emailPort = Number(process.env.EMAIL_PORT || 587);
+function getEmailJsConfig() {
+  const config = {
+    serviceId: (process.env.EMAILJS_SERVICE_ID || "").trim(),
+    templateId: (process.env.EMAILJS_TEMPLATE_ID || "").trim(),
+    publicKey: (process.env.EMAILJS_PUBLIC_KEY || "").trim(),
+    privateKey: (process.env.EMAILJS_PRIVATE_KEY || "").trim(),
+  };
 
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: emailPort,
-  secure: emailPort === 465,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+  const missing = [];
+  if (!config.serviceId) missing.push("EMAILJS_SERVICE_ID");
+  if (!config.templateId) missing.push("EMAILJS_TEMPLATE_ID");
+  if (!config.publicKey) missing.push("EMAILJS_PUBLIC_KEY");
 
-export async function sendOtpEmail(email, otp, purpose = "registration") {
-  const subject =
-    purpose === "password-reset"
-      ? "Reset your password"
-      : "Verify your email address";
+  if (missing.length) {
+    const error = new Error(
+      `Email service is not configured: ${missing.join(", ")}`
+    );
+    error.statusCode = 503;
+    throw error;
+  }
 
-  const heading =
-    purpose === "password-reset"
-      ? "Password Reset"
-      : "Email Verification";
+  return config;
+}
 
-  const text = [
-    `Your ${purpose === "password-reset" ? "password reset" : "email verification"} OTP is: ${otp}`,
-    "",
-    "This OTP expires in 5 minutes.",
-    "Do not share this code with anyone.",
-    "If you did not request this, you can ignore this email.",
-  ].join("\n");
-
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: auto;">
-      <h2>${heading}</h2>
-      <p>Use the following code to continue:</p>
-      <p style="font-size: 28px; font-weight: bold; letter-spacing: 6px;">
-        ${otp}
-      </p>
-      <p>This code expires in 5 minutes.</p>
-      <p>Do not share this code with anyone.</p>
-      <p>If you did not request this, ignore this email.</p>
-    </div>
-  `;
-
-  const result = await transporter.sendMail({
-    from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-    to: email,
-    subject,
-    text,
-    html,
-  });
+function emailContent(purpose) {
+  const isPasswordReset = purpose === "password-reset";
 
   return {
-    messageId: result.messageId,
+    subject: isPasswordReset
+      ? "Reset your password"
+      : "Verify your email address",
+    heading: isPasswordReset
+      ? "Password Reset"
+      : "Email Verification",
+    purposeLabel: isPasswordReset
+      ? "password reset"
+      : "email verification",
   };
+}
+
+export async function sendOtpEmail(email, otp, purpose = "registration") {
+  const config = getEmailJsConfig();
+  const content = emailContent(purpose);
+  const payload = {
+    service_id: config.serviceId,
+    template_id: config.templateId,
+    user_id: config.publicKey,
+    template_params: {
+      to_email: email,
+      otp,
+      passcode: otp,
+      purpose,
+      purpose_label: content.purposeLabel,
+      subject: content.subject,
+      heading: content.heading,
+      expires_in: "5 minutes",
+      app_name: "AuthFlow",
+    },
+  };
+
+  if (config.privateKey) {
+    payload.accessToken = config.privateKey;
+  }
+
+  let response;
+  try {
+    response = await fetch(EMAILJS_SEND_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(EMAIL_TIMEOUT_MS),
+    });
+  } catch (error) {
+    const isTimeout =
+      error?.name === "AbortError" || error?.name === "TimeoutError";
+    const unavailable = new Error(
+      isTimeout
+        ? "Email delivery timed out. Please try again."
+        : "Email delivery is temporarily unavailable."
+    );
+    unavailable.statusCode = isTimeout ? 504 : 502;
+    throw unavailable;
+  }
+
+  if (!response.ok) {
+    // Log only operational metadata. Never log keys, recipient addresses, or OTPs.
+    console.error("EmailJS delivery failed", {
+      status: response.status,
+      statusText: response.statusText,
+    });
+
+    const error = new Error(
+      response.status === 429
+        ? "Email service is busy. Please wait before requesting another code."
+        : "Email delivery is temporarily unavailable."
+    );
+    error.statusCode = response.status === 429 ? 503 : 502;
+    throw error;
+  }
+
+  return { messageId: "emailjs-accepted" };
 }
 
 export default { sendOtpEmail };
