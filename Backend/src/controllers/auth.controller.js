@@ -87,7 +87,8 @@ function getCookieMaxAge() {
 }
 
 function accessCookieOptions() {
-  const isProduction = process.env.NODE_ENV === "production";
+  const isProduction =
+    process.env.NODE_ENV === "production" || process.env.RENDER === "true";
 
   return {
     httpOnly: true,
