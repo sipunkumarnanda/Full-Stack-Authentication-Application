@@ -7,7 +7,13 @@ const errorMiddleware = (err, req, res, next) => {
     return next(err);
   }
 
-  const statusCode = err.statusCode || 500;
+  // Third-party SDKs sometimes expose symbolic status codes (for example,
+  // "SERVER_ERROR"). Express only accepts integer HTTP status codes.
+  const candidates = [err.statusCode, err.status];
+  const statusCode =
+    candidates.find(
+      (value) => Number.isInteger(value) && value >= 400 && value <= 599
+    ) || 500;
 
   res.status(statusCode).json({
     success: false,

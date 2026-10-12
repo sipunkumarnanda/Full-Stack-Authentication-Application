@@ -881,9 +881,7 @@ async function updateUserProfile(req, res, next) {
       const result = await uploadFile(file.buffer, `${randomUUID()}${extension}`);
 
       user.profileImage = result.url;
-      // imagekit@1.x deletes by file path; retain fileId compatibility if the
-      // dependency is upgraded to the newer SDK later.
-      user.profileImageFileId = result.filePath || result.fileId || "";
+      user.profileImageFileId = result.fileId || "";
     } else if (removeProfileImage === "true" || removeProfileImage === true) {
       user.profileImage = "";
       user.profileImageFileId = "";
