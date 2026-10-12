@@ -1,6 +1,10 @@
 import axios from "axios";
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
+// Keep production API calls on the Vercel origin. Vercel proxies /api to
+// Render, which makes the HTTP-only session cookie first-party in browsers.
+const baseURL = import.meta.env.DEV
+  ? import.meta.env.VITE_API_BASE_URL || "/api"
+  : "/api";
 
 export const apiClient = axios.create({
   baseURL,
