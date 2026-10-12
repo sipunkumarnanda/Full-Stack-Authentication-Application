@@ -4,7 +4,9 @@ import { fileURLToPath } from "node:url";
 const envPath = fileURLToPath(new URL("./.env", import.meta.url));
 const envResult = dotenv.config({ path: envPath, quiet: true });
 
-if (envResult.error) {
+// A local .env file is convenient in development, but production hosts such as
+// Render inject variables directly into process.env and do not create this file.
+if (envResult.error && envResult.error.code !== "ENOENT") {
   console.error(`Failed to load environment file at ${envPath}:`, envResult.error.message);
   process.exit(1);
 }
