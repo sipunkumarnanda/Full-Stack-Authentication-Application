@@ -32,10 +32,9 @@ describe("EmailJS email service", () => {
     delete process.env.EMAILJS_PRIVATE_KEY;
   });
 
-  test.each([
-    ["registration", "Verify your email address"],
-    ["password-reset", "Reset your password"],
-  ])("sends the %s OTP through EmailJS", async (purpose, subject) => {
+  test.each(["registration", "password-reset"])(
+    "sends the %s OTP through EmailJS",
+    async (purpose) => {
     await expect(
       sendOtpEmail("sipun@example.com", "123456", purpose)
     ).resolves.toEqual({ messageId: "emailjs-accepted" });
@@ -50,15 +49,14 @@ describe("EmailJS email service", () => {
       accessToken: "private_test",
       template_params: {
         to_email: "sipun@example.com",
+        to_name: expect.any(String),
         otp: "123456",
-        passcode: "123456",
-        purpose,
-        subject,
-        expires_in: "5 minutes",
+        expiry_minutes: 5,
       },
     });
-    expect(options.signal).toBeInstanceOf(AbortSignal);
-  });
+      expect(options.signal).toBeInstanceOf(AbortSignal);
+    }
+  );
 
   test("fails safely when EmailJS rejects a request", async () => {
     global.fetch.mockResolvedValue({
