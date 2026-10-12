@@ -1,11 +1,21 @@
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
 // Skip rate limiting only during automated tests
 const skipRateLimitInTests = () =>
   process.env.NODE_ENV === "test";
 
+// req.ip is resolved from X-Forwarded-For using Express's one-hop proxy trust.
+// A custom generator also prevents express-rate-limit from treating the
+// additional RFC Forwarded header supplied by the hosting proxy as an error.
+export const rateLimitKeyGenerator = (req) => ipKeyGenerator(req.ip);
+
+const proxyAwareOptions = {
+  keyGenerator: rateLimitKeyGenerator,
+};
+
 // Login: 5 requests per minute
 export const loginLimiter = rateLimit({
+  ...proxyAwareOptions,
   windowMs: 1 * 60 * 1000,
   limit: 5,
   standardHeaders: true,
@@ -19,6 +29,7 @@ export const loginLimiter = rateLimit({
 
 // OTP-related routes: 1 request per minute
 export const otpLimiter = rateLimit({
+  ...proxyAwareOptions,
   windowMs: 1 * 60 * 1000,
   limit: 5,
   standardHeaders: true,
@@ -32,6 +43,7 @@ export const otpLimiter = rateLimit({
 
 // Reset password: 5 requests per minute
 export const passwordResetLimiter = rateLimit({
+  ...proxyAwareOptions,
   windowMs: 1 * 60 * 1000,
   limit: 5,
   standardHeaders: true,

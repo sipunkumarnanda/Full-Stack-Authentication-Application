@@ -10,6 +10,10 @@ import errorMiddleware from "./middlewares/error.middleware.js";
 
 const app = express();
 
+// Render terminates TLS at one load-balancer hop and supplies the original
+// client address through X-Forwarded-For. Trust exactly that nearest hop.
+app.set("trust proxy", 1);
+
 const defaultAllowedOrigins = [
   "http://localhost:5173",
   "https://full-stack-authentication-applicati.vercel.app",
