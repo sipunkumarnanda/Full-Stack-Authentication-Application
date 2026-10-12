@@ -63,6 +63,9 @@ describe("EmailJS email service", () => {
       ok: false,
       status: 403,
       statusText: "Forbidden",
+      text: jest.fn().mockResolvedValue(
+        "Private key private_test rejected for sipun@example.com and OTP 123456"
+      ),
     });
     const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
@@ -75,7 +78,11 @@ describe("EmailJS email service", () => {
       });
       expect(consoleSpy).toHaveBeenCalledWith(
         "EmailJS delivery failed",
-        { status: 403, statusText: "Forbidden" }
+        {
+          status: 403,
+          statusText: "Forbidden",
+          reason: "Private key [redacted] rejected for [redacted] and OTP [redacted]",
+        }
       );
     } finally {
       consoleSpy.mockRestore();

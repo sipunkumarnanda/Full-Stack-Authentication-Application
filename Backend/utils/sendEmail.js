@@ -12,6 +12,14 @@ function requiredEnvironment(name) {
   return value;
 }
 
+function safeProviderReason(text, secrets) {
+  let reason = String(text || "").replace(/\s+/g, " ").trim();
+  for (const secret of secrets) {
+    if (secret) reason = reason.replaceAll(secret, "[redacted]");
+  }
+  return reason.slice(0, 300) || "No response details";
+}
+
 export async function sendEmail(to, name, otp) {
   const payload = {
     service_id: requiredEnvironment("EMAILJS_SERVICE_ID"),
@@ -49,9 +57,19 @@ export async function sendEmail(to, name, otp) {
   }
 
   if (!response.ok) {
+    const responseText = await response.text().catch(() => "");
+    const reason = safeProviderReason(responseText, [
+      payload.service_id,
+      payload.template_id,
+      payload.user_id,
+      payload.accessToken,
+      to,
+      otp,
+    ]);
     console.error("EmailJS delivery failed", {
       status: response.status,
       statusText: response.statusText,
+      reason,
     });
     const error = new Error(
       response.status === 429
