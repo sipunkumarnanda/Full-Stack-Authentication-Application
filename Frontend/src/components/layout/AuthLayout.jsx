@@ -19,7 +19,7 @@ export function AuthLayout({
   const { theme, setTheme } = useTheme();
 
   return (
-    <div className="auth-page relative min-h-screen bg-slate-50 dark:bg-[#0B1120] flex flex-col justify-center py-20 sm:px-6 lg:px-8">
+    <div className="auth-page relative flex min-h-screen min-h-[100dvh] items-center justify-center overflow-x-hidden bg-slate-50 px-4 py-24 dark:bg-[#0B1120] sm:px-6 sm:py-20 lg:px-8">
       <div
         className="auth-theme-switcher fixed right-4 top-4 z-20 flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm dark:border-[#293548] dark:bg-[#151E2E] sm:right-6 sm:top-6"
         role="group"
@@ -47,8 +47,9 @@ export function AuthLayout({
           );
         })}
       </div>
-      {/* Brand Header */}
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center px-4">
+      <div className={`auth-shell my-auto w-full ${cardWidth}`}>
+        {/* Brand Header */}
+        <div className="mx-auto w-full text-center">
         <Link
           to="/login"
           className="inline-flex items-center gap-2 text-primary font-bold text-2xl tracking-tight hover:opacity-90 transition-opacity"
@@ -64,15 +65,15 @@ export function AuthLayout({
           </h1>
         )}
         {subtitle && (
-          <p className="auth-muted mt-2 text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+          <p className="auth-muted mx-auto mt-2 max-w-sm text-balance text-sm leading-6 text-slate-500 dark:text-slate-400">
             {subtitle}
           </p>
         )}
       </div>
 
-      {/* Main Card */}
-      <div className={`mt-8 sm:mx-auto sm:w-full ${cardWidth} px-4`}>
-        <div className="auth-card bg-white dark:bg-[#151E2E] py-8 px-6 sm:px-10 shadow-card border border-slate-200 dark:border-[#293548] rounded-2xl">
+        {/* Main Card */}
+        <div className="mx-auto mt-7 w-full sm:mt-8">
+        <div className="auth-card rounded-2xl border border-slate-200 bg-white px-5 py-6 shadow-card dark:border-[#293548] dark:bg-[#151E2E] min-[380px]:px-6 sm:px-10 sm:py-8">
           {children}
         </div>
 
@@ -82,6 +83,7 @@ export function AuthLayout({
         <p className="auth-secondary mt-8 text-center text-xs text-slate-400 dark:text-slate-500">
           © {new Date().getFullYear()} AuthFlow Platform. End-to-end encrypted session security.
         </p>
+        </div>
       </div>
     </div>
   );
