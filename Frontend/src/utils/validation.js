@@ -164,7 +164,7 @@ export function getPasswordStrength(password = "") {
   } else if (metCount === 4) {
     score = 3;
     label = "Good";
-    color = "bg-blue-500 text-blue-500";
+    color = "bg-zinc-500 text-zinc-500";
   } else {
     score = 4;
     label = "Strong";

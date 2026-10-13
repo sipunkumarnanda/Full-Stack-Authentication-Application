@@ -19,11 +19,11 @@ export const Button = forwardRef(
     ref
   ) => {
     const baseStyles =
-      "inline-flex items-center justify-center font-medium rounded-lg transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed select-none active:scale-[0.99]";
+      "inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed select-none active:scale-[0.98]";
 
     const variantStyles = {
       primary:
-        "bg-primary text-white hover:bg-primary-700 active:bg-primary-800 focus:ring-primary shadow-sm hover:shadow",
+        "bg-primary text-white hover:bg-primary-700 active:bg-primary-800 focus:ring-primary shadow-sm hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20",
       secondary:
         "bg-slate-100 text-slate-800 hover:bg-slate-200 active:bg-slate-300 focus:ring-slate-400",
       outline:

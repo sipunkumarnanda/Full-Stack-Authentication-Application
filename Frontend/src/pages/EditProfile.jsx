@@ -3,6 +3,7 @@ import { Camera, Save, UserRound, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import Navbar from "../components/layout/Navbar";
+import DashboardFooter from "../components/layout/DashboardFooter";
 import Input from "../components/common/Input";
 import Button from "../components/common/Button";
 import useAuth from "../hooks/useAuth";
@@ -56,15 +57,16 @@ export default function EditProfile() {
   };
 
   const initials = `${form.firstName[0] || ""}${form.lastName[0] || ""}` || "U";
-  return <div className="dashboard-page min-h-screen"><Navbar /><main className="px-4 pb-20 pt-24 sm:px-6"><div className="mx-auto max-w-3xl">
+  return <div className="dashboard-page min-h-screen"><div className="dashboard-frame relative min-h-screen"><Navbar /><main className="px-4 pb-20 pt-24 sm:px-6"><div className="mx-auto max-w-3xl">
     <div className="mb-6"><p className="text-xs font-semibold text-primary">ACCOUNT SETTINGS</p><h1 className="mt-1 text-2xl font-bold">Edit profile</h1><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Update your public account information. Your email address cannot be changed.</p></div>
     <form onSubmit={submit} className="dashboard-card rounded-2xl border p-5 shadow-subtle sm:p-8">
-      <div className="flex flex-col items-center gap-4 border-b border-slate-200 pb-6 dark:border-[#293548] sm:flex-row">
+      <div className="flex flex-col items-center gap-4 pb-6 sm:flex-row">
         <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-primary text-2xl font-bold text-white">{form.profileImage ? <img src={form.profileImage} alt="Profile preview" className="h-full w-full object-cover" /> : initials}<label className="absolute inset-x-0 bottom-0 flex cursor-pointer justify-center bg-slate-950/65 py-1.5 text-white"><Camera className="h-4 w-4" /><input type="file" accept="image/jpeg,image/png,image/webp" onChange={chooseImage} className="sr-only" /></label></div>
         <div className="text-center sm:text-left"><h2 className="font-semibold">Profile photo</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">JPG, PNG, or WebP. Maximum 2 MB.</p>{form.profileImage && <button type="button" onClick={() => setForm((current) => ({ ...current, profileImage: "", profileImageFile: null, removeProfileImage: true }))} className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-red-600 dark:text-red-400"><X className="h-3.5 w-3.5" />Remove photo</button>}</div>
       </div>
       <div className="mt-6 grid gap-5 sm:grid-cols-2"><Input id="firstName" label="First name" required value={form.firstName} onChange={change("firstName")} maxLength={50} /><Input id="lastName" label="Last name" required value={form.lastName} onChange={change("lastName")} maxLength={50} /><Input id="username" label="Username" required value={form.username} onChange={(e) => setForm((c) => ({ ...c, username: e.target.value.replace(/[^a-zA-Z0-9_]/g, "").slice(0, 30) }))} leftIcon={UserRound} /><Input id="phone" label="Phone number" value={form.phone} onChange={(e) => setForm((c) => ({ ...c, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))} inputMode="numeric" placeholder="10-digit mobile number" /><Input id="email" label="Email address" value={user?.email || ""} disabled className="sm:col-span-2" helperText="Email changes are disabled for account security." /></div>
-      <div className="mt-7 flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 dark:border-[#293548] sm:flex-row sm:justify-end"><Button variant="outline" onClick={() => navigate("/profile")}>Cancel</Button><Button type="submit" leftIcon={Save} isLoading={saving}>Save changes</Button></div>
+      <div className="mt-7 flex flex-col-reverse gap-3 pt-5 sm:flex-row sm:justify-end"><Button variant="outline" onClick={() => navigate("/profile")}>Cancel</Button><Button type="submit" leftIcon={Save} isLoading={saving}>Save changes</Button></div>
     </form>
-  </div></main></div>;
+    <DashboardFooter />
+  </div></main></div></div>;
 }

@@ -8,7 +8,7 @@ export function PublicRoute({ children }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-[#090909]">
         <Loader size="lg" text="Loading..." />
       </div>
     );

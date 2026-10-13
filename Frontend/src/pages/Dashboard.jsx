@@ -2,15 +2,17 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   AtSign, Building2, CheckCircle2, Home, LayoutDashboard, LogOut, Mail,
-  MapPin, Pencil, Phone, Plus, ShieldCheck, Trash2, UserRound, UsersRound, X,
+  MapPin, Moon, Pencil, Phone, Plus, ShieldCheck, Sun, Trash2, UserRound, UsersRound, X,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../components/layout/Navbar";
+import DashboardFooter from "../components/layout/DashboardFooter";
 import Input from "../components/common/Input";
 import Button from "../components/common/Button";
 import Loader from "../components/common/Loader";
 import useAuth from "../hooks/useAuth";
+import { useTheme } from "../context/ThemeContext";
 import authService from "../services/authService";
 import { validationRules } from "../utils/validation";
 
@@ -20,27 +22,37 @@ function SectionIcon({ children, green = false }) {
   return <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${green ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400" : "bg-primary-50 text-primary dark:bg-primary/15 dark:text-primary-300"}`}>{children}</span>;
 }
 
-function DashboardSidebar({ logout }) {
+function DashboardSidebar({ logout, user, view }) {
+  const navigate = useNavigate();
+  const { isDark, setTheme } = useTheme();
   const links = [
-    ["dashboard", "Dashboard", LayoutDashboard], ["profile", "Profile", UserRound],
-    ["addresses", "Addresses", MapPin], ["security", "Security", ShieldCheck],
+    ["overview", "/dashboard", "Overview", LayoutDashboard],
+    ["profile", "/profile", "Profile", UserRound],
+    ["addresses", "/addresses", "Addresses", MapPin],
   ];
-  const scroll = (id) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const displayName = user?.fullName ? `${user.fullName.firstName} ${user.fullName.lastName}`.trim() : user?.username || "Account";
+  const initials = user?.fullName ? `${user.fullName.firstName?.[0] || ""}${user.fullName.lastName?.[0] || ""}` : user?.username?.slice(0, 2) || "U";
   return (
-    <aside className="dashboard-sidebar fixed inset-y-0 left-0 z-50 hidden w-60 flex-col border-r border-slate-200 bg-white dark:border-[#293548] dark:bg-[#0F172A] lg:flex">
-      <button onClick={() => scroll("dashboard")} className="flex h-16 items-center gap-2.5 border-b border-slate-100 px-7 text-left dark:border-[#293548]">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white"><ShieldCheck className="h-5 w-5" /></span>
-        <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">AuthFlow</span>
+    <aside className="dashboard-sidebar fixed inset-y-4 left-4 z-50 hidden w-56 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-zinc-800 dark:bg-[#111111] lg:flex">
+      <button onClick={() => navigate("/dashboard")} className="flex h-16 items-center gap-2.5 border-b border-slate-100 px-5 text-left dark:border-zinc-800">
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white"><ShieldCheck className="h-4 w-4" /></span>
+        <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white">AuthFlow</span>
       </button>
-      <nav className="space-y-1 p-4" aria-label="Dashboard sections">
-        {links.map(([id, label, Icon], index) => (
-          <button key={id} onClick={() => scroll(id)} className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium ${index === 0 ? "bg-primary-50 text-primary dark:bg-primary/20 dark:text-primary-300" : "text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800"}`}>
+      <p className="px-5 pb-2 pt-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Workspace</p>
+      <nav className="space-y-1 px-3" aria-label="Dashboard sections">
+        {links.map(([id, path, label, Icon]) => (
+          <button key={id} onClick={() => navigate(path)} className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${view === id ? "bg-slate-100 text-slate-950 dark:bg-zinc-800 dark:text-white" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:text-zinc-500 dark:hover:bg-zinc-900 dark:hover:text-zinc-200"}`}>
             <Icon className="h-4 w-4" />{label}
           </button>
         ))}
       </nav>
-      <div className="mt-auto space-y-1 border-t border-slate-100 p-4 dark:border-[#293548]">
-        <button onClick={logout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-950/30 dark:hover:text-red-400"><LogOut className="h-4 w-4" />Logout</button>
+      <div className="mt-auto border-t border-slate-100 p-3 dark:border-zinc-800">
+        <div className="mb-2 flex items-center gap-2.5 rounded-xl p-2">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-xs font-bold text-white">{user?.profileImage ? <img src={user.profileImage} alt="" className="h-full w-full object-cover" /> : initials}</span>
+          <span className="min-w-0 flex-1"><span className="block truncate text-xs font-semibold">{displayName}</span><span className="block truncate text-[10px] text-slate-500">@{user?.username}</span></span>
+          <button type="button" onClick={() => setTheme(isDark ? "light" : "dark")} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-zinc-800 dark:hover:text-white" aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}>{isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</button>
+        </div>
+        <button onClick={logout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400"><LogOut className="h-4 w-4" />Sign out</button>
       </div>
     </aside>
   );
@@ -51,7 +63,7 @@ function MobileNav() {
   const location = useLocation();
   const links = [["/dashboard", "Dashboard", LayoutDashboard], ["/profile", "Profile", UserRound], ["/addresses", "Addresses", MapPin]];
   return <nav className="dashboard-mobile-nav fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t border-slate-200 bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] dark:border-[#293548] dark:bg-[#0F172A]/95 lg:hidden" aria-label="Mobile navigation">
-    {links.map(([path, label, Icon]) => <button key={path} onClick={() => navigate(path)} aria-current={location.pathname === path ? "page" : undefined} className={`flex min-h-16 flex-col items-center justify-center gap-1 text-[10px] font-medium ${location.pathname === path ? "text-primary dark:text-primary-300" : "text-slate-500 dark:text-slate-400"}`}><Icon className="h-4 w-4" />{label}</button>)}
+    {links.map(([path, label, Icon]) => { const active = path === "/dashboard" ? location.pathname === path : location.pathname === path || location.pathname.startsWith(`${path}/`); return <button key={path} onClick={() => navigate(path)} aria-current={active ? "page" : undefined} className={`flex min-h-16 flex-col items-center justify-center gap-1 text-[10px] font-medium ${active ? "text-primary dark:text-primary-300" : "text-slate-500 dark:text-slate-400"}`}><Icon className="h-4 w-4" />{label}</button>; })}
   </nav>;
 }
 
@@ -131,9 +143,15 @@ export function Dashboard({ view = "overview" }) {
   ];
 
   return <div id="dashboard" className="dashboard-page min-h-screen bg-slate-50 text-slate-900 dark:bg-[#0B1120] dark:text-slate-50">
-    <Navbar />
-    <main className="dashboard-content px-4 pb-24 pt-20 sm:px-6 lg:px-8 lg:pb-10">
+    <div className="dashboard-frame relative min-h-screen">
+    <div className="lg:hidden"><Navbar /></div>
+    <DashboardSidebar logout={logout} user={user} view={view} />
+    <main className="dashboard-content px-4 pb-24 pt-20 sm:px-6 lg:ml-60 lg:px-8 lg:pb-10 lg:pt-8">
       <div className="mx-auto max-w-6xl space-y-5">
+        <div className="flex items-center justify-between px-1">
+          <div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-zinc-600">AuthFlow workspace</p><h1 className="mt-1 text-lg font-semibold capitalize tracking-tight">{view === "overview" ? "Account dashboard" : view}</h1></div>
+          <div className="hidden items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-[10px] font-medium text-slate-500 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/70 dark:text-zinc-500 sm:flex"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />Protected session</div>
+        </div>
         <section className={`${card} relative overflow-hidden p-5 sm:p-7`}>
           <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-primary-50 dark:bg-primary/5" />
           <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -167,14 +185,16 @@ export function Dashboard({ view = "overview" }) {
             {addresses.map((address) => <article key={address._id} className={`address-card rounded-xl border p-4 ${address.isDefault ? "address-card-default border-primary bg-primary-50/20 dark:bg-primary/5" : "border-slate-200 dark:border-[#293548]"}`}>
               <div className="flex items-start justify-between gap-3"><div className="flex items-center gap-2"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-primary dark:bg-slate-800 dark:text-primary-300">{address.isDefault ? <Home className="h-4 w-4" /> : <Building2 className="h-4 w-4" />}</span><p className="text-sm font-semibold">{address.street}</p></div>{address.isDefault && <span className="rounded-md bg-primary px-2 py-1 text-[10px] font-semibold text-white">Default</span>}</div>
               <div className="mt-3 space-y-1.5 pl-10 text-xs text-slate-600 dark:text-slate-400"><p>{address.city}, {address.state} - {address.pincode}</p><p>◉&nbsp; {address.country}</p><p className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />{address.phone}</p></div>
-              <div className="address-actions mt-4 flex justify-end gap-2 border-t border-slate-100 pt-3 dark:border-[#293548]"><Button size="sm" variant="outline" onClick={() => openEdit(address)} leftIcon={Pencil} aria-label={`Edit address ${address.street}`}>Edit</Button><Button size="sm" variant="ghost" onClick={() => setAddressToDelete(address)} leftIcon={Trash2} className="!bg-red-50 !text-red-600 dark:!bg-red-500/10 dark:!text-red-400" aria-label={`Delete address ${address.street}`}>Delete</Button></div>
+              <div className="address-actions mt-4 flex justify-end gap-2 pt-3"><Button size="sm" variant="outline" onClick={() => openEdit(address)} leftIcon={Pencil} aria-label={`Edit address ${address.street}`}>Edit</Button><Button size="sm" variant="ghost" onClick={() => setAddressToDelete(address)} leftIcon={Trash2} className="!bg-red-50 !text-red-600 dark:!bg-red-500/10 dark:!text-red-400" aria-label={`Delete address ${address.street}`}>Delete</Button></div>
             </article>)}
           </div>}
         </section>}
       </div>
+      <DashboardFooter />
     </main><MobileNav />
+    </div>
 
-    {modalOpen && <div className="fixed inset-0 z-[60] flex items-end justify-center overflow-y-auto bg-slate-950/55 p-0 backdrop-blur-sm sm:items-center sm:p-5" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget && !isSubmitting) closeModal(); }}>
+    {modalOpen && <div className="fixed inset-0 z-[60] flex items-end justify-center overflow-y-auto bg-black/75 p-0 backdrop-blur-sm sm:items-center sm:p-5" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget && !isSubmitting) closeModal(); }}>
       <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby="address-dialog-title" className="dashboard-modal max-h-[94vh] w-full overflow-y-auto rounded-t-2xl border border-slate-200 bg-white p-5 text-slate-900 shadow-elevated dark:border-[#293548] dark:bg-[#151E2E] dark:text-slate-50 sm:max-w-2xl sm:rounded-2xl sm:p-6">
         <div className="flex items-start justify-between"><div><h2 id="address-dialog-title" className="text-lg font-bold">{addressToEdit ? "Edit Address" : "Add New Address"}</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Fill in your address details to save a new location.</p></div><button onClick={closeModal} disabled={isSubmitting} aria-label="Close address form" className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><X className="h-5 w-5" /></button></div>
         <form onSubmit={handleSubmit(saveAddress)} className="mt-5 grid gap-4 sm:grid-cols-2" noValidate>
@@ -190,7 +210,7 @@ export function Dashboard({ view = "overview" }) {
       </div>
     </div>}
 
-    {addressToDelete && <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm" role="alertdialog" aria-modal="true"><div className={`${card} w-full max-w-sm p-6`}><SectionIcon><Trash2 className="h-4 w-4" /></SectionIcon><h2 className="mt-4 font-bold">Delete Address?</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Remove “{addressToDelete.street}”? This action cannot be undone.</p><div className="mt-5 flex justify-end gap-2"><Button size="sm" variant="outline" onClick={() => setAddressToDelete(null)} disabled={Boolean(deletingId)}>Cancel</Button><Button size="sm" variant="danger" onClick={deleteAddress} isLoading={deletingId === addressToDelete._id}>Delete address</Button></div></div></div>}
+    {addressToDelete && <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm" role="alertdialog" aria-modal="true"><div className={`${card} w-full max-w-sm p-6`}><SectionIcon><Trash2 className="h-4 w-4" /></SectionIcon><h2 className="mt-4 font-bold">Delete Address?</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Remove “{addressToDelete.street}”? This action cannot be undone.</p><div className="mt-5 flex justify-end gap-2"><Button size="sm" variant="outline" onClick={() => setAddressToDelete(null)} disabled={Boolean(deletingId)}>Cancel</Button><Button size="sm" variant="danger" onClick={deleteAddress} isLoading={deletingId === addressToDelete._id}>Delete address</Button></div></div></div>}
   </div>;
 }
 

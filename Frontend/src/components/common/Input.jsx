@@ -35,7 +35,7 @@ export const Input = forwardRef(
           </label>
         )}
 
-        <div className="relative rounded-lg">
+        <div className="input-shell relative rounded-xl">
           {LeftIcon && (
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
               <LeftIcon className="w-4 h-4" aria-hidden="true" />
@@ -50,7 +50,7 @@ export const Input = forwardRef(
             aria-invalid={Boolean(error)}
             aria-describedby={error ? errorId : helperId}
             className={`
-              form-input w-full h-10 rounded-lg text-sm transition-colors duration-150
+              form-input w-full h-11 rounded-xl text-sm transition-all duration-200
               bg-white text-slate-900 border dark:bg-slate-800 dark:text-slate-50
               placeholder:text-slate-400 dark:placeholder:text-slate-500
               ${LeftIcon ? "pl-9" : "pl-3.5"}
