@@ -205,7 +205,7 @@ export function Dashboard({ view = "overview" }) {
           <AddressInput name="pincode" label="Pincode / Postal Code" control={control} rules={validationRules.address.pincode} placeholder="6-digit PIN code" numeric maxLength={6} />
           <AddressInput name="phone" label="Contact phone number" control={control} rules={validationRules.address.phone} placeholder="10-digit mobile number" numeric maxLength={10} />
           <Controller name="isDefault" control={control} render={({ field }) => <label className="flex cursor-pointer items-center gap-2 text-xs text-slate-700 dark:text-slate-300 sm:col-span-2"><input type="checkbox" checked={field.value} onChange={(e) => field.onChange(e.target.checked)} className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary" />Set as default address</label>} />
-          <div className="flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 dark:border-[#293548] sm:col-span-2 sm:flex-row sm:justify-end"><Button variant="outline" onClick={closeModal} disabled={isSubmitting}>Cancel</Button><Button type="submit" isLoading={isSubmitting} disabled={isSubmitting || !isValid}>{addressToEdit ? "Update address" : "Save address"}</Button></div>
+          <div className="flex flex-col-reverse gap-2 pt-4 sm:col-span-2 sm:flex-row sm:justify-end"><Button variant="outline" onClick={closeModal} disabled={isSubmitting}>Cancel</Button><Button type="submit" isLoading={isSubmitting} disabled={isSubmitting || !isValid}>{addressToEdit ? "Update address" : "Save address"}</Button></div>
         </form>
       </div>
     </div>}
